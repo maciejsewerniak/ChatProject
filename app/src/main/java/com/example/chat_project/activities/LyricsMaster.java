@@ -230,23 +230,20 @@ public class LyricsMaster extends AppCompatActivity {
                     String email = ((MailConfirmation) inputData).getTitle();
                     String ip = ((MailConfirmation) inputData).getLyrics();
                     Pair<String, String> receivedCredentials = new Pair<>(email, ip);
-                    if (!isEmailBusy(receivedCredentials)) {
-                        if (!credentials.contains(receivedCredentials)) {
-                            credentials.add(receivedCredentials);
+
+                    sendMessageToOtherDevices(email, ACCEPTATION_MESSAGE, ip, getIPAddress(true));  //nowy IP jest zawsze zaakceptowany
+
+                    Optional<Pair<String, String>> credentialsToDelete = handleReceivedCredentials(receivedCredentials);    //zaaktualizowanie listy plus pobranie do unsubscirbe
+
+                    credentialsToDelete.ifPresent(stringStringPair ->
+                            sendMessageToOtherDevices(stringStringPair.first, NOT_ACCEPTATION_MESSAGE, stringStringPair.second, getIPAddress(true)));
+                    runOnUiThread(new Runnable() {  // UI update
+                        @Override
+                        public void run() {
+                            // Stuff that updates the UI
+                            connectionStatus.setText(String.format("Your Ip: %s \n%s \nAccepted : \n%s", getIPAddress(true), getWifiName(), credentials.toString()));
                         }
-                        sendMessageToOtherDevices(email, ACCEPTATION_MESSAGE, ip, getIPAddress(true));
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Stuff that updates the UI
-                                connectionStatus.setText(String.format("Your Ip: %s \n%s \nAccepted : \n%s", getIPAddress(true), getWifiName(), credentials.toString()));
-                            }
-                        });
-                    } else {
-                        sendMessageToOtherDevices(email, ACCEPTATION_MESSAGE, ip, getIPAddress(true));
-                        Optional<Pair<String, String>> credentialsToDelete = getDeletedCredenialsName(receivedCredentials);
-                        credentialsToDelete.ifPresent(stringStringPair -> sendMessageToOtherDevices(stringStringPair.first, NOT_ACCEPTATION_MESSAGE, stringStringPair.second, getIPAddress(true)));
-                    }
+                    });
                 }
             }
         });
@@ -256,28 +253,58 @@ public class LyricsMaster extends AppCompatActivity {
         return wifi.getConnectionInfo().getSSID();
     }
 
-    private boolean isEmailBusy(Pair<String, String> credentialToCheck) {
-        boolean present = false;
-        for (Pair<String, String> cred : credentials) {
-            if (cred.first.equals(credentialToCheck.first) && !cred.second.equals(credentialToCheck.second)) {
-                present = true;
-                break;
-            }
+    private Optional<Pair<String, String>> handleReceivedCredentials(Pair<String, String> credentialToCheck) {
+        if (credentials.isEmpty()) {
+            credentials.add(credentialToCheck);
+            return Optional.empty();        //pierwszy user
         }
-        return present;
-    }
+        if (credentials.contains(credentialToCheck)) {
+            return Optional.empty();        //ponowne zatwierdzenie kogos kto juz ma credentiale
+        }
 
-    private Optional<Pair<String, String>> getDeletedCredenialsName(Pair<String, String> credential) {
         for (int i = 0; i < credentials.size(); i++) {
-            if (credentials.get(i) != null && credentials.get(i).first.equals(credential.first) && !credentials.get(i).second.equals(credential.second)) {
-                final Pair<String, String> credentialsToDelete = credentials.get(i);
-                credentials.remove(i);
-                credentials.add(i, credential);
-                return Optional.of(credentialsToDelete);
+            if (credentials.get(i).first.equals(credentialToCheck.first)) {             //ktos juz ma ten mail
+                final Pair<String, String> credentialsToDelete = credentials.get(i); //pobieram do unsubscribe
+                credentials.remove(i);          //wywalam
+                credentials.add(i, credentialToCheck);      //dodaje nowy, dobry
+                for (int k = i + 1; k < credentials.size(); k++) {
+                    if (credentials.get(k).second.equals(credentialToCheck.second)) {
+                        credentials.remove(k);                                          //usuniecie innyego maila jezeli byl dla tego IP
+                    }
+                }
+                return Optional.of(credentialsToDelete);        //odsylam do unsubscribea
+            }
+            if (credentials.get(i).second.equals(credentialToCheck.second)) {   //te IP ma juz inny mail
+                credentials.set(i, credentialToCheck);      //zamieniam mail
+                return Optional.empty();        //nie potrzeba wysylac unsubscribe
             }
         }
+        credentials.add(credentialToCheck); //nowe credentiale
         return Optional.empty();
     }
+
+//    private boolean isIPBusy(Pair<String, String> credentialToCheck) {
+//        boolean present = false;
+//        for (Pair<String, String> cred : credentials) {
+//            if (cred.second.equals(credentialToCheck.second)) {
+//                present = true;
+//                break;
+//            }
+//        }
+//        return present;
+//    }
+//
+//    private Optional<Pair<String, String>> getDeletedCredenialsName(Pair<String, String> credential) {
+//        for (int i = 0; i < credentials.size(); i++) {
+//            if (credentials.get(i) != null && credentials.get(i).first.equals(credential.first) && !credentials.get(i).second.equals(credential.second)) {
+//                final Pair<String, String> credentialsToDelete = credentials.get(i);
+//                credentials.remove(i);
+//                credentials.add(i, credential);
+//                return Optional.of(credentialsToDelete);
+//            }
+//        }
+//        return Optional.empty();
+//    }
 
     public void sendGreetingsToOtherDevices() {
         Lyrics lyrics = new Lyrics();

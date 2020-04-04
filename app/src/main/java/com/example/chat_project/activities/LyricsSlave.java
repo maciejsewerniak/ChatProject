@@ -52,12 +52,13 @@ public class LyricsSlave extends AppCompatActivity {
     public static final String NO_WIFI_WARNING_MESSAGE = "WIFI NOT CONFIGURED !!";
     public static final String SERVER_LOST_MESSAGE = "SERVER LOST !!!";
     public static final String SERVER_FOUND_MESSAGE = "\n Some server found !";
+    public static final String CHECK_CONNECTION_OR_RECONNECT_MESSAGE = "Check your server name from Wi-Fi connection or RECONNECT !! ";
+    public static final String intentLostKey = "intentLostKey";
+    public static final String intentFoundKey = "intentFoundKey";
     public AlertDialog myDialog;
     private ClientService clientService;
     private boolean accepted = false;
     private String serverIp;
-    public static final String intentLostKey = "intentLostKey";
-    public static final String intentFoundKey = "intentFoundKey";
 
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
@@ -70,6 +71,7 @@ public class LyricsSlave extends AppCompatActivity {
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mail = findViewById(R.id.mail);
         mail.setText("noyyn");
+        currentDeviceEmail = "";
         setStatuses(true, true, false);
         clientService = new ClientService();
         wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -104,6 +106,9 @@ public class LyricsSlave extends AppCompatActivity {
         if (!checkWifiOnAndConnected()) {
             turnOnWifi();
         }
+        if (!accepted) {
+            currentDeviceEmail = "";
+        }
     }
 
 
@@ -126,8 +131,15 @@ public class LyricsSlave extends AppCompatActivity {
             setStatuses(true, true, false);
             wifiStatus.setTextColor(Color.RED);
             wifiStatus.setText(SERVER_LOST_MESSAGE);
+            if(accepted){
+                turnWifiOff();
+            }
         }
     };
+
+    private void turnWifiOff() {
+
+    }
 
 
     private BroadcastReceiver wifiStateReceiver = new BroadcastReceiver() {
@@ -176,7 +188,6 @@ public class LyricsSlave extends AppCompatActivity {
             goToAcceptedState(serverIp);
         } else {
             clientService.startServerDiscovery(this);
-            getPermisionForRoom();
         }
     }
 
@@ -313,7 +324,7 @@ public class LyricsSlave extends AppCompatActivity {
     private void getPermisionForRoom() {
         String mailToSend = mail.getText().toString();
         wifiStatus.setTextColor(Color.RED);
-        wifiStatus.setText("Check your server name from Wi-Fi connection ! ");
+        wifiStatus.setText(CHECK_CONNECTION_OR_RECONNECT_MESSAGE);
         if (mailToSend.isEmpty()) {
             Toast.makeText(getApplicationContext(), "empty email !", Toast.LENGTH_SHORT).show();
             return;
