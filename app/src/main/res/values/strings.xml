@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">chat_project</string>
+    <string name="be_server">Be server</string>
+    <string name="be_client">Be Client</string>
+</resources>
