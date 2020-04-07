@@ -54,11 +54,14 @@ public class LyricsSlave extends AppCompatActivity {
     public static final String SERVER_FOUND_MESSAGE = "\n Some server found !";
     public static final String CHECK_CONNECTION_OR_RECONNECT_MESSAGE = "Check your server name from Wi-Fi connection or RECONNECT !! ";
     public static final String intentLostKey = "intentLostKey";
+    private static final String RECONNECT_MESSAGE = "\nTrying to connect";
     public static final String intentFoundKey = "intentFoundKey";
+    public static final String EMPTY_STRING = "";
     public AlertDialog myDialog;
     private ClientService clientService;
     private boolean accepted = false;
     private String serverIp;
+    private String EMPTY_EMAIL_MESSAGE = "empty email !";
 
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
@@ -71,7 +74,7 @@ public class LyricsSlave extends AppCompatActivity {
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mail = findViewById(R.id.mail);
         mail.setText("noyyn");
-        currentDeviceEmail = "";
+        currentDeviceEmail = EMPTY_STRING;
         setStatuses(true, true, false);
         clientService = new ClientService();
         wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -107,17 +110,16 @@ public class LyricsSlave extends AppCompatActivity {
             turnOnWifi();
         }
         if (!accepted) {
-            currentDeviceEmail = "";
+            currentDeviceEmail = EMPTY_STRING;
         }
     }
-
 
     private BroadcastReceiver sercverFoundReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             wifiStatus.append(SERVER_FOUND_MESSAGE);
             if (accepted) {
-                wifiStatus.append("\nTrying to connect");
+                wifiStatus.append(RECONNECT_MESSAGE);
                 getPermisionForRoom();
             }
         }
@@ -131,7 +133,7 @@ public class LyricsSlave extends AppCompatActivity {
             setStatuses(true, true, false);
             wifiStatus.setTextColor(Color.RED);
             wifiStatus.setText(SERVER_LOST_MESSAGE);
-            if(accepted){
+            if (accepted) {
                 turnWifiOff();
             }
         }
@@ -326,7 +328,7 @@ public class LyricsSlave extends AppCompatActivity {
         wifiStatus.setTextColor(Color.RED);
         wifiStatus.setText(CHECK_CONNECTION_OR_RECONNECT_MESSAGE);
         if (mailToSend.isEmpty()) {
-            Toast.makeText(getApplicationContext(), "empty email !", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), EMPTY_EMAIL_MESSAGE, Toast.LENGTH_SHORT).show();
             return;
         } else {
             currentDeviceEmail = mailToSend;
